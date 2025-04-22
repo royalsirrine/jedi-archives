@@ -8,7 +8,10 @@ resource "google_secret_manager_secret" "windows_credentials" {
   secret_id = "${var.environment}-windows-discovery-credentials"
   
   replication {
-    automatic = {}
+  user_managed {
+    replicas {
+      location = "us-central1"
+    }
   }
 }
 
@@ -26,7 +29,10 @@ resource "google_secret_manager_secret" "linux_credentials" {
   secret_id = "${var.environment}-linux-discovery-credentials"
   
   replication {
-    automatic = {}
+  user_managed {
+    replicas {
+      location = "us-central1"
+    }
   }
 }
 
@@ -43,7 +49,10 @@ resource "google_secret_manager_secret" "database_credentials" {
   secret_id = "${var.environment}-database-discovery-credentials"
   
   replication {
-    automatic = {}
+  user_managed {
+    replicas {
+      location = "us-central1"
+    }
   }
 }
 
