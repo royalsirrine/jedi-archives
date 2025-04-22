@@ -34,6 +34,7 @@ resource "google_secret_manager_secret" "linux_credentials" {
       location = "us-central1"
     }
   }
+ }
 }
 
 resource "google_secret_manager_secret_version" "linux_credentials" {
