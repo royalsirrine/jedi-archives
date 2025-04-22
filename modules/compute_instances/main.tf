@@ -4,9 +4,18 @@
 
 
 # Create SSH Key Pair (if not using OS Login)
+
+resource "tls_private_key" "starwars_key" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
 resource "local_file" "ssh_private_key" {
   content         = tls_private_key.starwars_key.private_key_pem
-  filename        = "${path.module
+  filename        = "${path.module}/${var.key_name}.pem"
+  file_permission = "0400"
+}
+
 
 # Linux Web Server (unx-web01)
 resource "google_compute_instance" "unx_web01" {
@@ -467,10 +476,6 @@ resource "google_compute_instance_group" "mid_server_group_b" {
   file_permission = "0400"
 }
 
-resource "tls_private_key" "starwars_key" {
-  algorithm = "RSA"
-  rsa_bits  = 4096
-}
 
 # Windows App Server - Old Generation (win-app01)
 resource "google_compute_instance" "win_app01" {
@@ -494,95 +499,63 @@ resource "google_compute_instance" "win_app01" {
 
   metadata = {
     windows-startup-script-ps1 = <<-EOT
-      # Set Administrator password more reliably
-      net user Administrator "Emp1reP@ss123!" /active:yes
+    # Set Administrator password more reliably
+    net user Administrator "Emp1reP@ss123!" /active:yes
 
-      # Create local discovery admin user for pre-domain discovery
-      $Password = ConvertTo-SecureString "Emp1reD1sc0v3ryP@ss!" -AsPlainText -Force
-      New-LocalUser -Name "discadmin" -Password $Password -FullName "Discovery Admin" -Description "Local admin for ServiceNow discovery"
-      Add-LocalGroupMember -Group "Administrators" -Member "discadmin"
+    # Create local discovery admin user for pre-domain discovery
+    $Password = ConvertTo-SecureString "Emp1reD1sc0v3ryP@ss!" -AsPlainText -Force
+    New-LocalUser -Name "discadmin" -Password $Password -FullName "Discovery Admin" -Description "Local admin for ServiceNow discovery"
+    Add-LocalGroupMember -Group "Administrators" -Member "discadmin"
 
-      # Install IIS
-      Install-WindowsFeature -Name Web-Server -IncludeManagementTools
+    # Install IIS
+    Install-WindowsFeature -Name Web-Server -IncludeManagementTools
 
-      # Create test page
-      Set-Content -Path "C:\\inetpub\\wwwroot\\index.html" -Value "<html><body><h1>Imperial Hologram Server (Old Gen)</h1></body></html>"
+    # Create test page
+    Set-Content -Path "C:\\inetpub\\wwwroot\\index.html" -Value "<html><body><h1>Imperial Hologram Server (Old Gen)</h1></body></html>"
 
-      # Enable WinRM for discovery
-      Enable-PSRemoting -Force
-      Set-Item WSMan:\\localhost\\Client\\TrustedHosts -Value "*" -Force
-      Set-Service WinRM -StartupType Automatic
-      Start-Service WinRM
+    # Enable WinRM for discovery
+    Enable-PSRemoting -Force
+    Set-Item WSMan:\\localhost\\Client\\TrustedHosts -Value "*" -Force
+    Set-Service WinRM -StartupType Automatic
+    Start-Service WinRM
 
-      # Set DNS to point to domain controller (more reliably)
-      $interfaceIndex = (Get-NetAdapter | Where-Object {$_.Status -eq "Up"}).InterfaceIndex
-      Set-DnsClientServerAddress -InterfaceIndex $interfaceIndex -ServerAddresses "${var.domain_controller_ip}"
-      
-      # Test DNS resolution before attempting domain join
-      $testScript = @'
-      # Test DNS resolution
-      while ($true) {
-        if (Resolve-DnsName -Name win-dc01.starwars.local -ErrorAction SilentlyContinue) {
-          Write-Host "DNS resolution working, proceeding with domain join"
-          break
-        }
-        Write-Host "Waiting for DNS resolution to domain controller..."
-        Start-Sleep -Seconds 30
+    # Set DNS to point to domain controller (more reliably)
+    $interfaceIndex = (Get-NetAdapter | Where-Object {$_.Status -eq "Up"}).InterfaceIndex
+    Set-DnsClientServerAddress -InterfaceIndex $interfaceIndex -ServerAddresses "${var.domain_controller_ip}"
+
+    # Test DNS resolution before attempting domain join
+    $testScript = @'
+    # Test DNS resolution
+    while ($true) {
+      if (Resolve-DnsName -Name win-dc01.starwars.local -ErrorAction SilentlyContinue) {
+        Write-Host "DNS resolution working, proceeding with domain join"
+        break
       }
-      
-      # Join the domain with NetBIOS-compatible name
-      $domain = "starwars.local"
-      $username = "STARWARS\\Administrator" 
-      $password = ConvertTo-SecureString "Emp1reP@ss123!" -AsPlainText -Force
-      $credential = New-Object System.Management.Automation.PSCredential($username, $password)
-      
-      Add-Computer -DomainName $domain -Credential $credential -Restart -Force -ErrorAction SilentlyContinue
-      '@ | Out-File C:\\join-domain.ps1
-      
-      # Create scheduled task to run after boot
-      $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-NoProfile -ExecutionPolicy Bypass -File "C:\join-domain.ps1"'
-      $trigger = New-ScheduledTaskTrigger -AtStartup
-      Register-ScheduledTask -TaskName "Join-Domain" -Action $action -Trigger $trigger -User "SYSTEM" -RunLevel Highest
+      Write-Host "Waiting for DNS resolution to domain controller..."
+      Start-Sleep -Seconds 30
+    }
 
-      # Download and install Java 11
-      [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-      Invoke-WebRequest -Uri "https://download.java.net/java/GA/jdk11/9/GPL/openjdk-11.0.2_windows-x64_bin.zip" -OutFile "C:\\java11.zip"
-      Expand-Archive -Path "C:\\java11.zip" -DestinationPath "C:\Program Files\Java\"
+    # Join the domain with NetBIOS-compatible name
+    $domain = "starwars.local"
+    $username = "STARWARS\\Administrator"
+    $password = ConvertTo-SecureString "Emp1reP@ss123!" -AsPlainText -Force
+    $credential = New-Object System.Management.Automation.PSCredential($username, $password)
+    Add-Computer -DomainName $domain -Credential $credential -Restart -Force -ErrorAction SilentlyContinue
+    '@ | Out-File C:\\join-domain.ps1
 
-      # Enable RDP
-      Set-ItemProperty -Path 'HKLM:\\System\\CurrentControlSet\\Control\\Terminal Server' -Name "fDenyTSConnections" -Value 0
-      Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-    EOT
-  }
+    # Create scheduled task to run after boot
+    $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-NoProfile -ExecutionPolicy Bypass -File "C:\\join-domain.ps1"'
+    $trigger = New-ScheduledTaskTrigger -AtStartup
+    Register-ScheduledTask -TaskName "Join-Domain" -Action $action -Trigger $trigger -User "SYSTEM" -RunLevel Highest
 
-  service_account {
-    email  = "empire-osconfig-sa@${var.project_id}.iam.gserviceaccount.com"
-    scopes = ["cloud-platform"]
-  }
-}
-      
-      # Join the domain with NetBIOS-compatible name
-      $domain = "starwars.local"
-      $username = "STARWARS\\Administrator" 
-      $password = ConvertTo-SecureString "Emp1reP@ss123!" -AsPlainText -Force
-      $credential = New-Object System.Management.Automation.PSCredential($username, $password)
-      
-      Add-Computer -DomainName $domain -Credential $credential -Restart -Force -ErrorAction SilentlyContinue
-      '@ | Out-File C:\\join-domain.ps1
-      
-      # Create scheduled task to run after boot
-      $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-NoProfile -ExecutionPolicy Bypass -File "C:\\join-domain.ps1"'
-      $trigger = New-ScheduledTaskTrigger -AtStartup
-      Register-ScheduledTask -TaskName "Join-Domain" -Action $action -Trigger $trigger -User "SYSTEM" -RunLevel Highest
-      
-      # Download and install Java 8
-      [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-      Invoke-WebRequest -Uri "https://javadl.oracle.com/webapps/download/AutoDL?BundleId=246471_2dee051a5d0647d5be72a7c0abff270e" -OutFile "C:\\java8.exe"
-      Start-Process -FilePath "C:\\java8.exe" -ArgumentList "/s" -Wait
+    # Download and install Java 8
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    Invoke-WebRequest -Uri "https://javadl.oracle.com/webapps/download/AutoDL?BundleId=246471_2dee051a5d0647d5be72a7c0abff270e" -OutFile "C:\\java8.exe"
+    Start-Process -FilePath "C:\\java8.exe" -ArgumentList "/s" -Wait
 
-      # Enable RDP
-      Set-ItemProperty -Path 'HKLM:\\System\\CurrentControlSet\\Control\\Terminal Server' -Name "fDenyTSConnections" -Value 0
-      Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+    # Enable RDP
+    Set-ItemProperty -Path 'HKLM:\\System\\CurrentControlSet\\Control\\Terminal Server' -Name "fDenyTSConnections" -Value 0
+    Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
     EOT
   }
 
@@ -614,45 +587,48 @@ resource "google_compute_instance" "win_app02" {
 
   metadata = {
     windows-startup-script-ps1 = <<-EOT
-      # Set Administrator password more reliably
-      net user Administrator "Emp1reP@ss123!" /active:yes
+    # Set Administrator password more reliably
+    net user Administrator "Emp1reP@ss123!" /active:yes
 
-      # Create local discovery admin user for pre-domain discovery
-      $Password = ConvertTo-SecureString "Emp1reD1sc0v3ryP@ss!" -AsPlainText -Force
-      New-LocalUser -Name "discadmin" -Password $Password -FullName "Discovery Admin" -Description "Local admin for ServiceNow discovery"
-      Add-LocalGroupMember -Group "Administrators" -Member "discadmin"
+    # Create local discovery admin user for pre-domain discovery
+    $Password = ConvertTo-SecureString "Emp1reD1sc0v3ryP@ss!" -AsPlainText -Force
+    New-LocalUser -Name "discadmin" -Password $Password -FullName "Discovery Admin" -Description "Local admin for ServiceNow discovery"
+    Add-LocalGroupMember -Group "Administrators" -Member "discadmin"
 
-      # Install IIS
-      Install-WindowsFeature -Name Web-Server -IncludeManagementTools
+    # Install IIS
+    Install-WindowsFeature -Name Web-Server -IncludeManagementTools
 
-      # Create test page
-      Set-Content -Path "C:\\inetpub\\wwwroot\\index.html" -Value "<html><body><h1>Imperial Hologram Server (New Gen)</h1></body></html>"
+    # Create test page
+    Set-Content -Path "C:\\inetpub\\wwwroot\\index.html" -Value "<html><body><h1>Imperial Hologram Server (New Gen)</h1></body></html>"
 
-      # Create security software simulation
-      New-Item -Path "C:\\Program Files\\BlastShield" -ItemType Directory -Force
-      Set-Content -Path "C:\\Program Files\\BlastShield\version.txt" -Value "4.5.2"
-      New-Item -Path "C:\\Program Files\\BlastShield\bin" -ItemType Directory -Force
-      New-Item -Path "C:\\Program Files\\BlastShield\conf" -ItemType Directory -Force
-      Set-Content -Path "C:\\Program Files\\BlastShield\\conf\\shield.conf" -Value "mode=active`nserver=deathstar.starwars.local`ninterval=5"
+    # Create security software simulation
+    New-Item -Path "C:\\Program Files\\BlastShield" -ItemType Directory -Force
+    Set-Content -Path "C:\\Program Files\\BlastShield\\version.txt" -Value "4.5.2"
+    New-Item -Path "C:\\Program Files\\BlastShield\\bin" -ItemType Directory -Force
+    New-Item -Path "C:\\Program Files\\BlastShield\\conf" -ItemType Directory -Force
+    Set-Content -Path "C:\\Program Files\\BlastShield\\conf\\shield.conf" -Value "mode=active\nserver=deathstar.starwars.local\ninterval=5"
 
-      # Enable WinRM for discovery
-      Enable-PSRemoting -Force
-      Set-Item WSMan:\\localhost\\Client\\TrustedHosts -Value "*" -Force
-      Set-Service WinRM -StartupType Automatic
-      Start-Service WinRM
+    # Enable WinRM for discovery
+    Enable-PSRemoting -Force
+    Set-Item WSMan:\\localhost\\Client\\TrustedHosts -Value "*" -Force
+    Set-Service WinRM -StartupType Automatic
+    Start-Service WinRM
 
-      # Set DNS to point to domain controller (more reliably)
-      $interfaceIndex = (Get-NetAdapter | Where-Object {$_.Status -eq "Up"}).InterfaceIndex
-      Set-DnsClientServerAddress -InterfaceIndex $interfaceIndex -ServerAddresses "${var.domain_controller_ip}"
-      
-      # Test DNS resolution before attempting domain join
-      $testScript = @'
-      # Test DNS resolution
-      while ($true) {
-        if (Resolve-DnsName -Name win-dc01.starwars.local -ErrorAction SilentlyContinue) {
-          Write-Host "DNS resolution working, proceeding with domain join"
-          break
-        }
-        Write-Host "Waiting for DNS resolution to domain controller..."
-        Start-Sleep -Seconds 30
+    # Set DNS to point to domain controller (more reliably)
+    $interfaceIndex = (Get-NetAdapter | Where-Object {$_.Status -eq "Up"}).InterfaceIndex
+    Set-DnsClientServerAddress -InterfaceIndex $interfaceIndex -ServerAddresses "${var.domain_controller_ip}"
+
+    # Test DNS resolution before attempting domain join
+    $testScript = @'
+    # Test DNS resolution
+    while ($true) {
+      if (Resolve-DnsName -Name win-dc01.starwars.local -ErrorAction SilentlyContinue) {
+        Write-Host "DNS resolution working, proceeding with domain join"
+        break
       }
+      Write-Host "Waiting for DNS resolution to domain controller..."
+      Start-Sleep -Seconds 30
+    }
+    '@ | Out-File C:\\join-domain.ps1
+    EOT
+  }
