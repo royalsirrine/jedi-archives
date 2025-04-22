@@ -83,8 +83,8 @@ resource "google_compute_router_nat" "lightspeed_nat" {
 }
 
 # MID Server Load Balancer Configuration
-# Health Check for MID Servers
-resource "google_compute_health_check" "mid_server_health_check" {
+# Regional Health Check for MID Servers
+resource "google_compute_region_health_check" "mid_server_health_check" {
   name               = "rebel-fleet-health-check"
   description        = "Health check for MID Server fleet"
   region             = var.region
@@ -99,9 +99,10 @@ resource "google_compute_health_check" "mid_server_health_check" {
 }
 
 # Backend Service for MID Servers
-resource "google_compute_backend_service" "mid_server_backend" {
+resource "google_compute_region_backend_service" "mid_server_backend" {
   name = "rebel-fleet-backend"
   description = "Backend service for MID Server fleet"
+  region      = var-region
   health_checks = [google_compute_health_check.mid_server_health_check.id]
   timeout_sec = 30
   connection_draining_timeout_sec = 300
@@ -125,7 +126,7 @@ resource "google_compute_backend_service" "mid_server_backend" {
 }
 
 # URL Map for MID Server Traffic
-resource "google_compute_url_map" "mid_server_url_map" {
+resource "google_compute_region_url_map" "mid_server_url_map" {
   name = "rebel-fleet-url-map"
   description = "URL map for MID Server fleet"
   region      = var.region
@@ -144,6 +145,7 @@ resource "google_compute_target_http_proxy" "mid_server_proxy" {
 resource "google_compute_forwarding_rule" "mid_server_lb" {
   name                  = "rebel-fleet-lb"
   description           = "Load balancer for MID Server fleet"
+  region                = var.region
   load_balancing_scheme = "EXTERNAL"
   port_range            = "80-8085"
   region                = var.region
