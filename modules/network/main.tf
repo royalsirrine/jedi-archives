@@ -1,3 +1,8 @@
+##############################################
+# modules/network/main.tf - Network Configuration
+##############################################
+
+
 resource "google_compute_network" "galaxy_vpc" {
   name                    = var.vpc_name
   auto_create_subnetworks = false
@@ -102,11 +107,11 @@ resource "google_compute_region_health_check" "mid_server_health_check" {
 resource "google_compute_region_backend_service" "mid_server_backend" {
   name = "rebel-fleet-backend"
   description = "Backend service for MID Server fleet"
-  region      = var-region
-  health_checks = [google_compute_health_check.mid_server_health_check.id]
+  region      = var.region
+  health_checks = [google_compute_region_health_check.mid_server_health_check.id]
   timeout_sec = 30
   connection_draining_timeout_sec = 300
-  load_balancing_scheme = "EXTERNAL _MANAGED"
+  load_balancing_scheme = "EXTERNAL_MANAGED"
   protocol = "HTTP"
   port_name = "mid-server"
 
@@ -130,15 +135,15 @@ resource "google_compute_region_url_map" "mid_server_url_map" {
   name = "rebel-fleet-url-map"
   description = "URL map for MID Server fleet"
   region      = var.region
-  default_service = google_compute_backend_service.mid_server_backend.id
+  default_service = google_compute_region_backend_service.mid_server_backend.id
 }
 
 # HTTP Proxy for MID Server Traffic
-resource "google_compute_target_http_proxy" "mid_server_proxy" {
+resource "google_compute_region_target_http_proxy" "mid_server_proxy" {
   name = "rebel-fleet-proxy"
   description = "Proxy for MID Server fleet"
   region      = var.region
-  url_map = google_compute_url_map.mid_server_url_map.id
+  url_map = google_compute_region_url_map.mid_server_url_map.id
 }
 
 # Forwarding Rule (External IP and Ports)
@@ -146,9 +151,8 @@ resource "google_compute_forwarding_rule" "mid_server_lb" {
   name                  = "rebel-fleet-lb"
   description           = "Load balancer for MID Server fleet"
   region                = var.region
-  load_balancing_scheme = "EXTERNAL"
+  load_balancing_scheme = "EXTERNAL_MANAGED"
   port_range            = "80-8085"
   target                = google_compute_region_target_http_proxy.mid_server_proxy.id
   network_tier          = "PREMIUM"
 }
-
