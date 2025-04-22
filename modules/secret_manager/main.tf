@@ -54,6 +54,7 @@ resource "google_secret_manager_secret" "database_credentials" {
       location = "us-central1"
     }
   }
+ }
 }
 
 resource "google_secret_manager_secret_version" "database_credentials" {
