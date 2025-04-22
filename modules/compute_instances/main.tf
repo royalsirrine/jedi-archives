@@ -506,11 +506,11 @@ resource "google_compute_instance" "win_app01" {
       Install-WindowsFeature -Name Web-Server -IncludeManagementTools
 
       # Create test page
-      Set-Content -Path "C:\inetpub\wwwroot\index.html" -Value "<html><body><h1>Imperial Hologram Server (Old Gen)</h1></body></html>"
+      Set-Content -Path "C:\\inetpub\\wwwroot\\index.html" -Value "<html><body><h1>Imperial Hologram Server (Old Gen)</h1></body></html>"
 
       # Enable WinRM for discovery
       Enable-PSRemoting -Force
-      Set-Item WSMan:\localhost\Client\TrustedHosts -Value "*" -Force
+      Set-Item WSMan:\\localhost\\Client\\TrustedHosts -Value "*" -Force
       Set-Service WinRM -StartupType Automatic
       Start-Service WinRM
 
@@ -537,7 +537,7 @@ resource "google_compute_instance" "win_app01" {
       $credential = New-Object System.Management.Automation.PSCredential($username, $password)
       
       Add-Computer -DomainName $domain -Credential $credential -Restart -Force -ErrorAction SilentlyContinue
-      '@ | Out-File C:\join-domain.ps1
+      '@ | Out-File C:\\join-domain.ps1
       
       # Create scheduled task to run after boot
       $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-NoProfile -ExecutionPolicy Bypass -File "C:\join-domain.ps1"'
@@ -546,11 +546,11 @@ resource "google_compute_instance" "win_app01" {
 
       # Download and install Java 11
       [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-      Invoke-WebRequest -Uri "https://download.java.net/java/GA/jdk11/9/GPL/openjdk-11.0.2_windows-x64_bin.zip" -OutFile "C:\java11.zip"
-      Expand-Archive -Path "C:\java11.zip" -DestinationPath "C:\Program Files\Java\"
+      Invoke-WebRequest -Uri "https://download.java.net/java/GA/jdk11/9/GPL/openjdk-11.0.2_windows-x64_bin.zip" -OutFile "C:\\java11.zip"
+      Expand-Archive -Path "C:\\java11.zip" -DestinationPath "C:\Program Files\Java\"
 
       # Enable RDP
-      Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+      Set-ItemProperty -Path 'HKLM:\\System\\CurrentControlSet\\Control\\Terminal Server' -Name "fDenyTSConnections" -Value 0
       Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
     EOT
   }
@@ -568,20 +568,20 @@ resource "google_compute_instance" "win_app01" {
       $credential = New-Object System.Management.Automation.PSCredential($username, $password)
       
       Add-Computer -DomainName $domain -Credential $credential -Restart -Force -ErrorAction SilentlyContinue
-      '@ | Out-File C:\join-domain.ps1
+      '@ | Out-File C:\\join-domain.ps1
       
       # Create scheduled task to run after boot
-      $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-NoProfile -ExecutionPolicy Bypass -File "C:\join-domain.ps1"'
+      $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-NoProfile -ExecutionPolicy Bypass -File "C:\\join-domain.ps1"'
       $trigger = New-ScheduledTaskTrigger -AtStartup
       Register-ScheduledTask -TaskName "Join-Domain" -Action $action -Trigger $trigger -User "SYSTEM" -RunLevel Highest
       
       # Download and install Java 8
       [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-      Invoke-WebRequest -Uri "https://javadl.oracle.com/webapps/download/AutoDL?BundleId=246471_2dee051a5d0647d5be72a7c0abff270e" -OutFile "C:\java8.exe"
-      Start-Process -FilePath "C:\java8.exe" -ArgumentList "/s" -Wait
+      Invoke-WebRequest -Uri "https://javadl.oracle.com/webapps/download/AutoDL?BundleId=246471_2dee051a5d0647d5be72a7c0abff270e" -OutFile "C:\\java8.exe"
+      Start-Process -FilePath "C:\\java8.exe" -ArgumentList "/s" -Wait
 
       # Enable RDP
-      Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+      Set-ItemProperty -Path 'HKLM:\\System\\CurrentControlSet\\Control\\Terminal Server' -Name "fDenyTSConnections" -Value 0
       Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
     EOT
   }
@@ -626,18 +626,18 @@ resource "google_compute_instance" "win_app02" {
       Install-WindowsFeature -Name Web-Server -IncludeManagementTools
 
       # Create test page
-      Set-Content -Path "C:\inetpub\wwwroot\index.html" -Value "<html><body><h1>Imperial Hologram Server (New Gen)</h1></body></html>"
+      Set-Content -Path "C:\\inetpub\\wwwroot\\index.html" -Value "<html><body><h1>Imperial Hologram Server (New Gen)</h1></body></html>"
 
       # Create security software simulation
-      New-Item -Path "C:\Program Files\BlastShield" -ItemType Directory -Force
-      Set-Content -Path "C:\Program Files\BlastShield\version.txt" -Value "4.5.2"
-      New-Item -Path "C:\Program Files\BlastShield\bin" -ItemType Directory -Force
-      New-Item -Path "C:\Program Files\BlastShield\conf" -ItemType Directory -Force
-      Set-Content -Path "C:\Program Files\BlastShield\conf\shield.conf" -Value "mode=active`nserver=deathstar.starwars.local`ninterval=5"
+      New-Item -Path "C:\\Program Files\\BlastShield" -ItemType Directory -Force
+      Set-Content -Path "C:\\Program Files\\BlastShield\version.txt" -Value "4.5.2"
+      New-Item -Path "C:\\Program Files\\BlastShield\bin" -ItemType Directory -Force
+      New-Item -Path "C:\\Program Files\\BlastShield\conf" -ItemType Directory -Force
+      Set-Content -Path "C:\\Program Files\\BlastShield\\conf\\shield.conf" -Value "mode=active`nserver=deathstar.starwars.local`ninterval=5"
 
       # Enable WinRM for discovery
       Enable-PSRemoting -Force
-      Set-Item WSMan:\localhost\Client\TrustedHosts -Value "*" -Force
+      Set-Item WSMan:\\localhost\\Client\\TrustedHosts -Value "*" -Force
       Set-Service WinRM -StartupType Automatic
       Start-Service WinRM
 
@@ -656,4 +656,3 @@ resource "google_compute_instance" "win_app02" {
         Write-Host "Waiting for DNS resolution to domain controller..."
         Start-Sleep -Seconds 30
       }
-

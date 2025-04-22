@@ -55,10 +55,10 @@ resource "google_compute_instance" "empire_strikes_back_dc" {
       
       # Remove the scheduled task so it doesn't run again
       Unregister-ScheduledTask -TaskName "Post-AD-Setup" -Confirm:$false
-      '@ | Out-File C:\post-setup.ps1
+      '@ | Out-File C:\\post-setup.ps1
       
       # Enable RDP
-      Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+      Set-ItemProperty -Path 'HKLM:\\System\\CurrentControlSet\\Control\\Terminal Server' -Name "fDenyTSConnections" -Value 0
       Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
     EOT
   }
