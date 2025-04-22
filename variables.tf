@@ -1,6 +1,6 @@
 variable "project_id" {
   description = "GCP project ID"
-  default     = "jedi-hackathon-project"
+  default     = "hackathon-v1-457421"
 }
 
 variable "region" {
