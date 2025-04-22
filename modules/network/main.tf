@@ -87,6 +87,7 @@ resource "google_compute_router_nat" "lightspeed_nat" {
 resource "google_compute_health_check" "mid_server_health_check" {
   name               = "rebel-fleet-health-check"
   description        = "Health check for MID Server fleet"
+  region             = var.region
   timeout_sec        = 5
   check_interval_sec = 10
   healthy_threshold  = 2
@@ -104,7 +105,7 @@ resource "google_compute_backend_service" "mid_server_backend" {
   health_checks = [google_compute_health_check.mid_server_health_check.id]
   timeout_sec = 30
   connection_draining_timeout_sec = 300
-  load_balancing_scheme = "EXTERNAL"
+  load_balancing_scheme = "EXTERNAL _MANAGED"
   protocol = "HTTP"
   port_name = "mid-server"
 
@@ -127,6 +128,7 @@ resource "google_compute_backend_service" "mid_server_backend" {
 resource "google_compute_url_map" "mid_server_url_map" {
   name = "rebel-fleet-url-map"
   description = "URL map for MID Server fleet"
+  region      = var.region
   default_service = google_compute_backend_service.mid_server_backend.id
 }
 
@@ -134,17 +136,18 @@ resource "google_compute_url_map" "mid_server_url_map" {
 resource "google_compute_target_http_proxy" "mid_server_proxy" {
   name = "rebel-fleet-proxy"
   description = "Proxy for MID Server fleet"
+  region      = var.region
   url_map = google_compute_url_map.mid_server_url_map.id
 }
 
 # Forwarding Rule (External IP and Ports)
 resource "google_compute_forwarding_rule" "mid_server_lb" {
-  name = "rebel-fleet-lb"
-  description = "Load balancer for MID Server fleet"
+  name                  = "rebel-fleet-lb"
+  description           = "Load balancer for MID Server fleet"
   load_balancing_scheme = "EXTERNAL"
-  port_range = "80-8085"
-  target = google_compute_target_http_proxy.mid_server_proxy.id
-  network_tier = "PREMIUM"
-  region = var.region
+  port_range            = "80-8085"
+  region                = var.region
+  target                = google_compute_region_target_http_proxy.mid_server_proxy.id
+  network_tier          = "PREMIUM"
 }
 
