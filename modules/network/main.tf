@@ -148,7 +148,6 @@ resource "google_compute_forwarding_rule" "mid_server_lb" {
   region                = var.region
   load_balancing_scheme = "EXTERNAL"
   port_range            = "80-8085"
-  region                = var.region
   target                = google_compute_region_target_http_proxy.mid_server_proxy.id
   network_tier          = "PREMIUM"
 }
