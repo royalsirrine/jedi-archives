@@ -472,10 +472,7 @@ resource "google_compute_instance_group" "mid_server_group_b" {
   lifecycle {
     create_before_destroy = true
   }
-}/${var.key_name}.pem"
-  file_permission = "0400"
 }
-
 
 # Windows App Server - Old Generation (win-app01)
 resource "google_compute_instance" "win_app01" {
@@ -632,3 +629,4 @@ resource "google_compute_instance" "win_app02" {
     '@ | Out-File C:\\join-domain.ps1
     EOT
   }
+

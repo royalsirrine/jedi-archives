@@ -1,31 +1,31 @@
 variable "project_id" {
   description = "GCP project ID"
-  default = "jedi-hackathon-project"
+  default     = "jedi-hackathon-project"
 }
 
 variable "region" {
   description = "GCP region to deploy resources"
-  default = "us-central1"
+  default     = "us-central1"
 }
 
 variable "vpc_cidr" {
   description = "CIDR block for VPC"
-  default = "10.0.0.0/16"
+  default     = "10.0.0.0/16"
 }
 
 variable "public_subnet_cidrs" {
   description = "CIDR blocks for public subnets"
-  default = ["10.0.1.0/24", "10.0.2.0/24"]
+  default     = ["10.0.1.0/24", "10.0.2.0/24"]
 }
 
 variable "private_subnet_cidrs" {
   description = "CIDR blocks for private subnets"
-  default = ["10.0.3.0/24", "10.0.4.0/24"]
+  default     = ["10.0.3.0/24", "10.0.4.0/24"]
 }
 
 variable "key_name" {
   description = "SSH key pair name"
-  default = "starwars-key"
+  default     = "starwars-key"
 }
 
 variable "instance_types" {
