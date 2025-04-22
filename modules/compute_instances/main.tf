@@ -629,4 +629,4 @@ resource "google_compute_instance" "win_app02" {
     '@ | Out-File C:\\join-domain.ps1
     EOT
   }
-
+}
