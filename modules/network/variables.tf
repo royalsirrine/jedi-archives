@@ -1,5 +1,5 @@
 ##############################################
-modules/network/variables.tf
+#modules/network/variables.tf
 ##############################################
 
 variable "vpc_name" {

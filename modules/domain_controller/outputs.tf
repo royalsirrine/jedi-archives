@@ -1,5 +1,5 @@
 ##############################################
-modules/domain_controller/outputs.tf
+#modules/domain_controller/outputs.tf
 ##############################################
 
 

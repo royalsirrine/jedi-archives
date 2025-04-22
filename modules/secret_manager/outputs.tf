@@ -1,5 +1,5 @@
 ##############################################
-modules/secret_manager/outputs.tf
+#modules/secret_manager/outputs.tf
 ##############################################
 
 
