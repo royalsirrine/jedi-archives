@@ -13,6 +13,7 @@ resource "google_secret_manager_secret" "windows_credentials" {
       location = "us-central1"
     }
   }
+ }
 }
 
 resource "google_secret_manager_secret_version" "windows_credentials" {
