@@ -119,26 +119,23 @@ resource "google_compute_region_backend_service" "mid_server_backend" {
   description           = "Backend service for MID Server fleet"
   region                = var.region
   health_checks         = [google_compute_region_health_check.mid_server_health_check.id]
-  timeout_sec           = 30
-  connection_draining_timeout_sec = 300
-  load_balancing_scheme = "EXTERNAL"  # Changed from EXTERNAL_MANAGED
   protocol              = "HTTP"
   port_name             = "mid-server"
+  load_balancing_scheme = "EXTERNAL"
 
   # Include backend from zone A
   backend {
     group = var.mid_server_instance_group_a
-    balancing_mode = "UTILIZATION"
-    capacity_scaler = 1.0
+    # Remove capacity_scaler for EXTERNAL load balancer
   }
   
   # Include backend from zone B
   backend {
     group = var.mid_server_instance_group_b
-    balancing_mode = "UTILIZATION"
-    capacity_scaler = 1.0
+    # Remove capacity_scaler for EXTERNAL load balancer
   }
 }
+
 
 # URL Map for MID Server Traffic
 resource "google_compute_region_url_map" "mid_server_url_map" {
