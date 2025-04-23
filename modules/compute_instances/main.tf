@@ -440,11 +440,6 @@ resource "google_compute_instance_group" "mid_server_group_a" {
     port = 80
   }
 
-  named_port {
-    name = "mid-server"
-    port = 8085
-  }
-
   lifecycle {
     create_before_destroy = true
   }
@@ -464,10 +459,6 @@ resource "google_compute_instance_group" "mid_server_group_b" {
     port = 80
   }
 
-  named_port {
-    name = "mid-server"
-    port = 8085
-  }
 
   lifecycle {
     create_before_destroy = true
@@ -630,3 +621,4 @@ resource "google_compute_instance" "win_app02" {
     EOT
   }
 }
+

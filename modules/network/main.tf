@@ -1,4 +1,3 @@
-
 ##############################################
 # modules/network/main.tf - Network Configuration
 ##############################################
@@ -7,16 +6,6 @@ resource "google_compute_network" "galaxy_vpc" {
   name                    = var.vpc_name
   auto_create_subnetworks = false
   project                 = var.project_id
-}
-
-# Create a proxy-only subnet required for the regional HTTP load balancer
-resource "google_compute_subnetwork" "proxy_subnet" {
-  name          = "proxy-only-subnet"
-  ip_cidr_range = "10.0.5.0/24"  # Use a CIDR range that doesn't conflict with your other subnets
-  region        = var.region
-  network       = google_compute_network.galaxy_vpc.id
-  purpose       = "REGIONAL_MANAGED_PROXY"
-  role          = "ACTIVE"
 }
 
 # Configure Cloud DNS for internal name resolution
@@ -95,72 +84,4 @@ resource "google_compute_router_nat" "lightspeed_nat" {
     name                    = google_compute_subnetwork.core_worlds_subnets[1].id
     source_ip_ranges_to_nat = ["ALL_IP_RANGES"]
   }
-}
-
-# MID Server Load Balancer Configuration
-# Regional Health Check for MID Servers
-resource "google_compute_region_health_check" "mid_server_health_check" {
-  name               = "rebel-fleet-health-check"
-  description        = "Health check for MID Server fleet"
-  region             = var.region
-  timeout_sec        = 5
-  check_interval_sec = 10
-  healthy_threshold  = 2
-  unhealthy_threshold = 3
-  
-  tcp_health_check {
-    port = "8085" # MID Server health check port
-  }
-}
-
-# Backend Service for MID Servers
-resource "google_compute_region_backend_service" "mid_server_backend" {
-  name                  = "rebel-fleet-backend"
-  description           = "Backend service for MID Server fleet"
-  region                = var.region
-  health_checks         = [google_compute_region_health_check.mid_server_health_check.id]
-  protocol              = "TCP"
-  load_balancing_scheme = "EXTERNAL"
-
-  # Include backend from zone A
-  backend {
-    group = var.mid_server_instance_group_a
-    balancing_mode = "CONNECTION"  # Changed from UTILIZATION to CONNECTION
-  }
-  
-  # Include backend from zone B
-  backend {
-    group = var.mid_server_instance_group_b
-    balancing_mode = "CONNECTION"  # Changed from UTILIZATION to CONNECTION
-  }
-}
-
-
-# URL Map for MID Server Traffic
-resource "google_compute_region_url_map" "mid_server_url_map" {
-  name = "rebel-fleet-url-map"
-  description = "URL map for MID Server fleet"
-  region      = var.region
-  default_service = google_compute_region_backend_service.mid_server_backend.id
-}
-
-# HTTP Proxy for MID Server Traffic
-resource "google_compute_region_target_http_proxy" "mid_server_proxy" {
-  name = "rebel-fleet-proxy"
-  description = "Proxy for MID Server fleet"
-  region      = var.region
-  url_map = google_compute_region_url_map.mid_server_url_map.id
-}
-
-# Forwarding Rule (External IP and Ports)
-resource "google_compute_forwarding_rule" "mid_server_lb" {
-  name                  = "rebel-fleet-lb"
-  description           = "Load balancer for MID Server fleet"
-  region                = var.region
-  load_balancing_scheme = "EXTERNAL"  # Changed from EXTERNAL_MANAGED
-  port_range            = "80"        # Simplified to just use port 80
-  backend_service       = google_compute_region_backend_service.mid_server_backend.id
-  network_tier          = "PREMIUM"
-  
-  depends_on = [google_compute_subnetwork.proxy_subnet]
 }
