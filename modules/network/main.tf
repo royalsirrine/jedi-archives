@@ -119,7 +119,7 @@ resource "google_compute_region_backend_service" "mid_server_backend" {
   description           = "Backend service for MID Server fleet"
   region                = var.region
   health_checks         = [google_compute_region_health_check.mid_server_health_check.id]
-  protocol              = "HTTP"
+  protocol              = "TCP"
   load_balancing_scheme = "EXTERNAL"
 
   # Include backend from zone A
