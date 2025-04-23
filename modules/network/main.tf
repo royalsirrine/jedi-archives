@@ -1,12 +1,22 @@
+
 ##############################################
 # modules/network/main.tf - Network Configuration
 ##############################################
-
 
 resource "google_compute_network" "galaxy_vpc" {
   name                    = var.vpc_name
   auto_create_subnetworks = false
   project                 = var.project_id
+}
+
+# Create a proxy-only subnet required for the regional HTTP load balancer
+resource "google_compute_subnetwork" "proxy_subnet" {
+  name          = "proxy-only-subnet"
+  ip_cidr_range = "10.0.5.0/24"  # Use a CIDR range that doesn't conflict with your other subnets
+  region        = var.region
+  network       = google_compute_network.galaxy_vpc.id
+  purpose       = "REGIONAL_MANAGED_PROXY"
+  role          = "ACTIVE"
 }
 
 # Configure Cloud DNS for internal name resolution
@@ -105,15 +115,15 @@ resource "google_compute_region_health_check" "mid_server_health_check" {
 
 # Backend Service for MID Servers
 resource "google_compute_region_backend_service" "mid_server_backend" {
-  name = "rebel-fleet-backend"
-  description = "Backend service for MID Server fleet"
-  region      = var.region
-  health_checks = [google_compute_region_health_check.mid_server_health_check.id]
-  timeout_sec = 30
+  name                  = "rebel-fleet-backend"
+  description           = "Backend service for MID Server fleet"
+  region                = var.region
+  health_checks         = [google_compute_region_health_check.mid_server_health_check.id]
+  timeout_sec           = 30
   connection_draining_timeout_sec = 300
-  load_balancing_scheme = "EXTERNAL_MANAGED"
-  protocol = "HTTP"
-  port_name = "mid-server"
+  load_balancing_scheme = "EXTERNAL"  # Changed from EXTERNAL_MANAGED
+  protocol              = "HTTP"
+  port_name             = "mid-server"
 
   # Include backend from zone A
   backend {
@@ -151,8 +161,10 @@ resource "google_compute_forwarding_rule" "mid_server_lb" {
   name                  = "rebel-fleet-lb"
   description           = "Load balancer for MID Server fleet"
   region                = var.region
-  load_balancing_scheme = "EXTERNAL_MANAGED"
-  port_range            = "80-8085"
-  target                = google_compute_region_target_http_proxy.mid_server_proxy.id
+  load_balancing_scheme = "EXTERNAL"  # Changed from EXTERNAL_MANAGED
+  port_range            = "80"        # Simplified to just use port 80
+  backend_service       = google_compute_region_backend_service.mid_server_backend.id
   network_tier          = "PREMIUM"
+  
+  depends_on = [google_compute_subnetwork.proxy_subnet]
 }
