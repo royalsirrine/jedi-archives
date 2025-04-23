@@ -120,19 +120,18 @@ resource "google_compute_region_backend_service" "mid_server_backend" {
   region                = var.region
   health_checks         = [google_compute_region_health_check.mid_server_health_check.id]
   protocol              = "HTTP"
-  port_name             = "mid-server"
   load_balancing_scheme = "EXTERNAL"
 
   # Include backend from zone A
   backend {
     group = var.mid_server_instance_group_a
-    # Remove capacity_scaler for EXTERNAL load balancer
+    balancing_mode = "CONNECTION"  # Changed from UTILIZATION to CONNECTION
   }
   
   # Include backend from zone B
   backend {
     group = var.mid_server_instance_group_b
-    # Remove capacity_scaler for EXTERNAL load balancer
+    balancing_mode = "CONNECTION"  # Changed from UTILIZATION to CONNECTION
   }
 }
 
